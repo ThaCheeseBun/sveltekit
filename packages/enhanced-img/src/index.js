@@ -3,10 +3,11 @@ import { imagetools } from 'vite-imagetools';
 import { image_plugin } from './vite-plugin.js';
 
 /**
+ * @param {import('vite-imagetools').DefaultDirectives} [defaultDirectives]
  * @returns {import('vite').Plugin[]}
  */
-export function enhancedImages() {
-	const imagetools_instance = imagetools_plugin();
+export function enhancedImages(defaultDirectives) {
+	const imagetools_instance = imagetools_plugin(defaultDirectives);
 	return !process.versions.webcontainer
 		? [image_plugin(imagetools_instance), imagetools_instance]
 		: [];
@@ -16,7 +17,7 @@ export function enhancedImages() {
  * @param {import('sharp').Metadata} meta
  * @returns {string}
  */
-function fallback_format(meta) {
+export function fallback_format(meta) {
 	if (meta.pages && meta.pages > 1) {
 		return meta.format === 'tiff' ? 'tiff' : 'gif';
 	}
@@ -26,29 +27,13 @@ function fallback_format(meta) {
 	return 'jpg';
 }
 
-function imagetools_plugin() {
+/**
+ * @param {import('vite-imagetools').DefaultDirectives} defaultDirectives
+ */
+function imagetools_plugin(defaultDirectives) {
 	/** @type {Partial<import('vite-imagetools').VitePluginOptions>} */
 	const imagetools_opts = {
-		defaultDirectives: async ({ pathname, searchParams: qs }, metadata) => {
-			if (!qs.has('enhanced')) return new URLSearchParams();
-
-			const meta = await metadata();
-			const img_width = qs.get('imgWidth');
-			const width = img_width ? parseInt(img_width) : meta.width;
-
-			if (!width) {
-				console.warn(`Could not determine width of image ${pathname}`);
-				return new URLSearchParams();
-			}
-
-			const { widths, kind } = get_widths(width, qs.get('imgSizes'));
-			return new URLSearchParams({
-				as: 'picture',
-				format: `avif;webp;${fallback_format(meta)}`,
-				w: widths.join(';'),
-				...(kind === 'x' && !qs.has('w') && { basePixels: widths[0].toString() })
-			});
-		},
+		defaultDirectives,
 		namedExports: false
 	};
 
@@ -63,7 +48,7 @@ function imagetools_plugin() {
  * @param {string | null} sizes
  * @returns {{ widths: number[]; kind: 'w' | 'x' }}
  */
-function get_widths(width, sizes) {
+export function get_widths(width, sizes) {
 	// We don't really know what the user wants here. But if they have an image that's really big
 	// then we can probably assume they're always displaying it full viewport/breakpoint.
 	// If the user is displaying a responsive image then the size usually doesn't change that much
