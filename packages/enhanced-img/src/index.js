@@ -3,11 +3,11 @@ import { imagetools } from 'vite-imagetools';
 import { image_plugin } from './vite-plugin.js';
 
 /**
- * @param {import('vite-imagetools').DefaultDirectives} [defaultDirectives]
+ * @param {Partial<import('vite-imagetools').VitePluginOptions>} userOpts
  * @returns {import('vite').Plugin[]}
  */
-export function enhancedImages(defaultDirectives) {
-	const imagetools_instance = imagetools_plugin(defaultDirectives);
+export function enhancedImages(userOpts) {
+	const imagetools_instance = imagetools_plugin(userOpts);
 	return !process.versions.webcontainer
 		? [image_plugin(imagetools_instance), imagetools_instance]
 		: [];
@@ -28,12 +28,12 @@ export function fallback_format(meta) {
 }
 
 /**
- * @param {import('vite-imagetools').DefaultDirectives} defaultDirectives
+ * @param {Partial<import('vite-imagetools').VitePluginOptions>} userOpts
  */
-function imagetools_plugin(defaultDirectives) {
+function imagetools_plugin(userOpts) {
 	/** @type {Partial<import('vite-imagetools').VitePluginOptions>} */
 	const imagetools_opts = {
-		defaultDirectives,
+		...userOpts,
 		namedExports: false
 	};
 
